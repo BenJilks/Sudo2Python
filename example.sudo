@@ -1,0 +1,10 @@
+
+SUBROUTINE main (arg)
+	test <- 5
+	FOR i <- 0 TO 6 DO
+		OUTPUT "test: " + str (i + test + arg)
+	END FOR
+END SUBROUTINE
+
+main (0)
+main (1)
