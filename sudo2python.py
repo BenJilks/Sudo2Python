@@ -14,6 +14,7 @@ FOR = 11
 ELSE = 12
 INDEX = 13
 RETURN = 14
+COMMENT = 15
 
 backlog = '\0'
 def get_type(name):
@@ -109,6 +110,8 @@ def next_token(f):
         elif c == '!':
             f.read(1).decode("ASCII")
             return ('!=', OP)
+        elif c == '#':
+            return (read_string(f, '#', '\n')[:-1], COMMENT)
     return None
 
 look = None
@@ -222,6 +225,9 @@ def parse_code(f, indent):
         elif look[1] == FOR: parse_for(f, indent)
         elif look[1] == RETURN: parse_return(f, indent)
         elif look[1] == ELSE: parse_else(f, indent)
+        elif look[1] == COMMENT: 
+            output(look[0], indent)
+            look_next(f)
         elif look[1] == END:
             look_next(f)
             look_next(f)

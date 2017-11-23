@@ -1,6 +1,8 @@
 
+# test
 SUBROUTINE main(arg)
 	grid = [[ "X" ]*4]*4
+	# comment
 	OUTPUT grid
 END SUBROUTINE
 
