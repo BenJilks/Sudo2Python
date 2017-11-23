@@ -1,0 +1,8 @@
+
+SUBROUTINE main(arg)
+	test <- [4, 7, 3]
+	test.append(arg)
+	OUTPUT test
+END SUBROUTINE
+
+main(3)

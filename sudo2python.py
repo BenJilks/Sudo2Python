@@ -12,7 +12,9 @@ ARGS = 9
 ASSIGN = 10
 FOR = 11
 ELSE = 12
+INDEX = 13
 
+backlog = '\0'
 def get_type(name):
     if name == "IF":
         return IF
@@ -31,13 +33,16 @@ def get_type(name):
     return NAME
 
 def read_name(f, c):
+    global backlog
     name = ""
-    while c.isalpha() or c.isdigit():
+    while c.isalpha() or c.isdigit() or c == '.':
         name += c
         c = f.read(1).decode("ASCII")
+    backlog = c
     return (name, get_type(name))
 
 def read_number(f, c):
+    global backlog
     number = ""
     dot_count = 0
     while c.isdigit() or c == '.':
@@ -45,32 +50,26 @@ def read_number(f, c):
         if c == '.':
             dot_count += 1
         c = f.read(1).decode("ASCII")
+    backlog = c
 
     if dot_count > 1:
         return None
     return (number, NUMBER)
 
-def read_string(f):
+def read_string(f, end_char):
     string = ""
     while True:
         c = f.read(1).decode("ASCII")
-        if c == '"':
+        if c == end_char:
             break
         string += c
-    return ('"' + string + '"', STRING)
-
-def read_args(f):
-    args = ""
-    while True:
-        c = f.read(1).decode("ASCII")
-        if c == ')':
-            break
-        args += c
-    return ('(' + args + ')', ARGS)
+    return string
 
 def next_token(f):
+    global backlog
     while True:
-        c = f.read(1).decode("ASCII")
+        c = backlog if backlog != '\0' else f.read(1).decode("ASCII")
+        backlog = '\0'
         if not c:
             break
 
@@ -88,9 +87,11 @@ def next_token(f):
         elif c.isdigit():
             return read_number(f, c)
         elif c == '"':
-            return read_string(f)
+            return ('"' + read_string(f, '"') + '"', STRING)
         elif c == '(':
-            return read_args(f)
+            return ('(' + read_string(f, ')') + ')', ARGS)
+        elif c == '[':
+            return ('[' + read_string(f, ']') + ']', INDEX)
         elif c in ['+', '-', '*', '/', '<', '>', '=']:
             return (c, OP)
     return None
@@ -113,7 +114,7 @@ def parse_expression(f):
     if not look:
         return left
 
-    if look[1] == ARGS:
+    if look[1] == ARGS or look[1] == INDEX:
         left += look[0]
         look_next(f)
     
@@ -212,6 +213,7 @@ def parse(path):
     parse_code(f, 0)
 
     # Run code kek
+    print(out)
     exec(out)
 
 parse("test.sudo")
