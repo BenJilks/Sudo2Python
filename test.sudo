@@ -1,8 +1,7 @@
 
 SUBROUTINE main(arg)
-	test <- [4, 7, 3]
-	test.append(arg)
-	OUTPUT test
+	grid = [[ "X" ]*4]*4
+	OUTPUT grid
 END SUBROUTINE
 
 main(3)

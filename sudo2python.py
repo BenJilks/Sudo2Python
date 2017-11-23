@@ -13,6 +13,7 @@ ASSIGN = 10
 FOR = 11
 ELSE = 12
 INDEX = 13
+RETURN = 14
 
 backlog = '\0'
 def get_type(name):
@@ -30,6 +31,10 @@ def get_type(name):
         return FOR
     elif name == "ELSE":
         return ELSE
+    elif name == "RETURN":
+        return RETURN
+    elif name in ["AND", "OR", "NOT"]:
+        return OP
     return NAME
 
 def read_name(f, c):
@@ -39,7 +44,11 @@ def read_name(f, c):
         name += c
         c = f.read(1).decode("ASCII")
     backlog = c
-    return (name, get_type(name))
+
+    tktype = get_type(name)
+    if tktype == OP or name == "LEN":
+        name = name.lower()
+    return (name, tktype)
 
 def read_number(f, c):
     global backlog
@@ -56,14 +65,17 @@ def read_number(f, c):
         return None
     return (number, NUMBER)
 
-def read_string(f, end_char):
+def read_string(f, open_char, close_char):
     string = ""
+    depth = 1
     while True:
         c = f.read(1).decode("ASCII")
-        if c == end_char:
+        if c == close_char: depth -= 1
+        elif c == open_char: depth += 1
+        if depth <= 0:
             break
         string += c
-    return string
+    return open_char + string + close_char
 
 def next_token(f):
     global backlog
@@ -87,13 +99,16 @@ def next_token(f):
         elif c.isdigit():
             return read_number(f, c)
         elif c == '"':
-            return ('"' + read_string(f, '"') + '"', STRING)
+            return (read_string(f, '"', '"'), STRING)
         elif c == '(':
-            return ('(' + read_string(f, ')') + ')', ARGS)
+            return (read_string(f, '(', ')'), ARGS)
         elif c == '[':
-            return ('[' + read_string(f, ']') + ']', INDEX)
+            return (read_string(f, '[', ']'), INDEX)
         elif c in ['+', '-', '*', '/', '<', '>', '=']:
             return (c, OP)
+        elif c == '!':
+            f.read(1).decode("ASCII")
+            return ('!=', OP)
     return None
 
 look = None
@@ -114,7 +129,7 @@ def parse_expression(f):
     if not look:
         return left
 
-    if look[1] == ARGS or look[1] == INDEX:
+    while look[1] == ARGS or look[1] == INDEX:
         left += look[0]
         look_next(f)
     
@@ -178,27 +193,35 @@ def parse_for(f, indent):
     output("for " + name + " in range(" + from_exp + ", " + to_exp + "):", indent)
     parse_code(f, indent+1)
 
+def parse_return(f, indent):
+    look_next(f)
+    expression = parse_expression(f)
+    output("return " + expression, indent)
+
+def parse_else(f, indent):
+    look_next(f)
+    if look[1] == IF:
+        look_next(f)
+        expression = parse_expression(f)
+        look_next(f)
+        output("elif " + expression + ":", indent-1)
+    else:
+        output("else:", indent-1)
+
 def parse_code(f, indent):
     global look
     while True:
         if not look:
             break
         
-        if look[1] == IF:
-            parse_if(f, indent)
-        elif look[1] == OUTPUT:
-            parse_print(f, indent)
-        elif look[1] == SUBROUTINE:
-            parse_function(f, indent)
-        elif look[1] == NAME:
-            parse_assign(f, indent)
-        elif look[1] == WHILE:
-            parse_while(f, indent)
-        elif look[1] == FOR:
-            parse_for(f, indent)
-        elif look[1] == ELSE:
-            output("else:", indent-1)
-            look_next(f)
+        if look[1] == IF: parse_if(f, indent)
+        elif look[1] == OUTPUT: parse_print(f, indent)
+        elif look[1] == SUBROUTINE: parse_function(f, indent)
+        elif look[1] == NAME: parse_assign(f, indent)
+        elif look[1] == WHILE: parse_while(f, indent)
+        elif look[1] == FOR: parse_for(f, indent)
+        elif look[1] == RETURN: parse_return(f, indent)
+        elif look[1] == ELSE: parse_else(f, indent)
         elif look[1] == END:
             look_next(f)
             look_next(f)
