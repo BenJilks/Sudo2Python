@@ -196,7 +196,7 @@ def parse_for(f, indent):
     to_exp = parse_expression(f)
     look_next(f) # DO
 
-    output("for " + name + " in range(" + from_exp + ", " + to_exp + "):", indent)
+    output("for " + name + " in range(" + from_exp + ", " + to_exp + "+1):", indent)
     parse_code(f, indent+1)
 
 def parse_return(f, indent):
