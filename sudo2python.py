@@ -71,7 +71,7 @@ def read_string(f, open_char, close_char):
     while True:
         c = f.read(1).decode("ASCII")
         if c == close_char: depth -= 1
-        elif c == open_char: depth += 1
+        elif c == open_char and open_char != close_char: depth += 1
         if depth <= 0:
             break
         string += c
