@@ -15,6 +15,7 @@ ELSE = 12
 INDEX = 13
 RETURN = 14
 COMMENT = 15
+IMPORT = 16
 
 backlog = '\0'
 def get_type(name):
@@ -34,6 +35,8 @@ def get_type(name):
         return ELSE
     elif name == "RETURN":
         return RETURN
+    elif name == "IMPORT":
+        return IMPORT
     elif name in ["AND", "OR", "NOT"]:
         return OP
     return NAME
@@ -211,6 +214,11 @@ def parse_else(f, indent):
     else:
         output("else:", indent-1)
 
+def parse_import(f, indent):
+    look_next(f) # IMPORT
+    name = look_next(f)[0]
+    output("import " + name, indent)
+
 def parse_code(f, indent):
     global look
     while True:
@@ -225,6 +233,7 @@ def parse_code(f, indent):
         elif look[1] == FOR: parse_for(f, indent)
         elif look[1] == RETURN: parse_return(f, indent)
         elif look[1] == ELSE: parse_else(f, indent)
+        elif look[1] == IMPORT: parse_import(f, indent)
         elif look[1] == COMMENT: 
             output(look[0], indent)
             look_next(f)
